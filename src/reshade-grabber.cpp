@@ -41,7 +41,7 @@
 #include <imgui.h>
 #include "imgui_stdlib.h"
 #include <reshade.hpp>
-#include <reshade_api_format_utils.hpp>
+#include <reshade_api_format.hpp>
 #include <dll_config.hpp>
 
 #include "generic_depth.h"
@@ -149,7 +149,7 @@ static std::string getProgramName() {
 }
 
 static void onInitDevice(device *device) {
-    grabber_context& grabber_state = device->create_data<grabber_context>(grabber_context::GUID);
+    grabber_context& grabber_state = device->create_user_data<grabber_context>(grabber_context::GUID);
 
     // Create the folder 'reshade-grabber' in the 'Pictures' user folder.
     char userDataPath[MAX_PATH];
@@ -183,13 +183,13 @@ static void onInitDevice(device *device) {
 
 static void onDestroyDevice(device *device)
 {
-    grabber_context& grabber_state = device->get_data<grabber_context>(grabber_context::GUID);
+    grabber_context& grabber_state = device->get_user_data<grabber_context>(grabber_context::GUID);
 
     if (grabber_state.stagingTexture != 0) {
         device->destroy_resource(grabber_state.stagingTexture);
     }
 
-    device->destroy_data<grabber_context>(grabber_context::GUID);
+    device->destroy_user_data<grabber_context>(grabber_context::GUID);
 }
 
 /**
@@ -356,11 +356,11 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
     command_queue* const queue = runtime->get_command_queue();
 
     void* state_tracking_context_ptr = nullptr;
-    if (!device->get_data(state_tracking_context::GUID, &state_tracking_context_ptr)) {
+    if (!device->get_user_data(state_tracking_context::GUID, &state_tracking_context_ptr)) {
         Logfile::get()->writeError("Error: Built-in depth add-on not loaded!");
         return;
     }
-    state_tracking_context &device_state = device->get_data<state_tracking_context>(state_tracking_context::GUID);
+    state_tracking_context &device_state = device->get_user_data<state_tracking_context>(state_tracking_context::GUID);
 
     if (device_state.selected_depth_stencil == 0) {
         Logfile::get()->writeError("Error: device_state.selected_depth_stencil");
@@ -388,22 +388,22 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
 
         command_list* const cmd_list = queue->get_immediate_command_list();
 
-        cmd_list->insert_barrier(
+        cmd_list->barrier(
                 grabber_state.stagingTexture,
                 resource_usage::cpu_access,
                 resource_usage::copy_dest);
-        cmd_list->insert_barrier(
+        cmd_list->barrier(
                 depth_stencil_resource,
                 resource_usage::depth_stencil | resource_usage::shader_resource,
                 resource_usage::copy_source);
 
         cmd_list->copy_resource(depth_stencil_resource, grabber_state.stagingTexture);
 
-        cmd_list->insert_barrier(
+        cmd_list->barrier(
                 depth_stencil_resource,
                 resource_usage::copy_source,
                 resource_usage::depth_stencil | resource_usage::shader_resource);
-        cmd_list->insert_barrier(
+        cmd_list->barrier(
                 grabber_state.stagingTexture,
                 resource_usage::copy_dest,
                 resource_usage::cpu_access);
@@ -496,7 +496,7 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
 
 static void onPresent(reshade::api::command_queue*, reshade::api::effect_runtime* runtime) {
     device* const device = runtime->get_device();
-    grabber_context& grabber_state = device->get_data<grabber_context>(grabber_context::GUID);
+    grabber_context& grabber_state = device->get_user_data<grabber_context>(grabber_context::GUID);
     if (!grabber_state.record) {
         return;
     }
@@ -515,7 +515,7 @@ static void onPresent(reshade::api::command_queue*, reshade::api::effect_runtime
 
 static void drawDebugMenu(effect_runtime *runtime, void *) {
     device* const device = runtime->get_device();
-    grabber_context& grabber_state = device->get_data<grabber_context>(grabber_context::GUID);
+    grabber_context& grabber_state = device->get_user_data<grabber_context>(grabber_context::GUID);
 
     g_imgui_function_table.Separator();
 
