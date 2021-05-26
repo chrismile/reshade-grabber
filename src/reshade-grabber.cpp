@@ -481,9 +481,10 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
         filenameNormal = grabber_state.screenshotsNormalDirectory + frameIdxStr + ".png";
     }
     // Save the images to the disk in parallel (this can bring a huge speed-up due to the PNG encoding being slow).
-    #pragma omp parallel num_threads(3)
+    #pragma omp parallel sections num_threads(3)
     {
-        if (omp_get_thread_num() == 0) {
+        #pragma omp section
+        {
             TimeMeasurement saveDepthImageTime("save depth image");
             saveImage16Bit(
                     filenameDepth, depth_stencil_desc.texture.width, depth_stencil_desc.texture.height,
@@ -491,7 +492,8 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
             saveDepthImageTime.stop();
         }
 
-        if (omp_get_thread_num() == 1) {
+        #pragma omp section
+        {
             TimeMeasurement saveNormalImageTime("save normal image");
             saveImage8Bit(
                     filenameNormal, depth_stencil_desc.texture.width, depth_stencil_desc.texture.height,
@@ -499,7 +501,8 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
             saveNormalImageTime.stop();
         }
 
-        if (omp_get_thread_num() == 2) {
+        #pragma omp section
+        {
             TimeMeasurement saveColorImageTime("save color image");
             saveImage8Bit(
                     filenameColor, frameWidth, frameHeight, colorData, 3);
