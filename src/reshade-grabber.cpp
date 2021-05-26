@@ -285,10 +285,25 @@ static float* copyDepthDataToCpu(
     return depthData;
 }
 
+inline int clamp(int x, int a, int b) {
+    if (x <= a) {
+        return a;
+    } else if (x >= b) {
+        return b;
+    } else {
+        return x;
+    }
+}
+
 inline vec3 getPoint(int x, int y, int width, int height, const float* depthData) {
-    float depth = depthData[x + y * width];
-    const float pixelSize = 500000.0f / float(height);
-    return vec3(x * depth / pixelSize, y * depth / pixelSize, depth);
+    float depth = depthData[clamp(x, 0, width - 1) + clamp(y, 0, height - 1) * width];
+    float xf = (float(x) - float(width - 1) / 2.0f) / float(height);
+    float yf = float(y) / float(height) - 0.5f;
+    return vec3(xf * depth, yf * depth, depth);
+
+    // The code below corresponds to what the built-in ReShade generic depth add-on uses, but does not correctly
+    // handle aspect ratios != 1.
+    //return vec3((x / float(width) - 0.5f) * depth, (y / float(height) - 0.5f) * depth, depth);
 }
 
 /**
@@ -302,14 +317,24 @@ static void computeNormalMap(int width, int height, const float* depthData, uint
     #pragma omp parallel for
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            vec3 leftPoint   = getPoint(std::max(x - 1, 0),         y,  width, height, depthData);
-            vec3 rightPoint  = getPoint(std::min(x + 1, width - 1), y,  width, height, depthData);
-            vec3 topPoint    = getPoint(x, std::max(y - 1, 0),          width, height, depthData);
-            vec3 bottomPoint = getPoint(x, std::min(y + 1, height - 1), width, height, depthData);
+            // Central difference.
+            //vec3 leftPoint   = getPoint(x - 1, y, width, height, depthData);
+            //vec3 rightPoint  = getPoint(x + 1, y, width, height, depthData);
+            //vec3 topPoint    = getPoint(x, y - 1, width, height, depthData);
+            //vec3 bottomPoint = getPoint(x, y + 1, width, height, depthData);
 
-            vec3 dddx = rightPoint - leftPoint;
-            vec3 dddy = bottomPoint - topPoint;
-            vec3 normal = normalize(cross(dddx, dddy));
+            //vec3 dddx = rightPoint - leftPoint;
+            //vec3 dddy = bottomPoint - topPoint;
+            //vec3 normal = normalize(cross(dddx, dddy));
+
+            // Forward difference (like done in ReShade generic depth plugin).
+            vec3 centerPoint = getPoint(x, y, width, height, depthData);
+            vec3 rightPoint  = getPoint(x + 1, y, width, height, depthData);
+            vec3 topPoint    = getPoint(x, y - 1, width, height, depthData);
+
+            vec3 dddx = rightPoint - centerPoint;
+            vec3 dddy = topPoint - centerPoint;
+            vec3 normal = normalize(cross(dddy, dddx));
 
             for (int c = 0; c < 3; c++) {
                 normalData[(x + y * width) * 3 + c] = uint8_t(std::round(std::clamp(
