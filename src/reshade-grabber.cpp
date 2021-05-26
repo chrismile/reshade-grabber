@@ -53,6 +53,7 @@
 
 using namespace reshade::api;
 
+static std::string appName; // The application name (e.g. "MyProgram" for "C:/dir/MyProgram.exe").
 static bool isDepthUpsideDown = false; // RESHADE_DEPTH_INPUT_IS_UPSIDE_DOWN
 static bool isDepthReversed = false; // RESHADE_DEPTH_INPUT_IS_REVERSED
 static bool isDepthLogarithmic = false; // RESHADE_DEPTH_INPUT_IS_LOGARITHMIC
@@ -164,8 +165,7 @@ static void onInitDevice(device *device) {
     }
 
     // Create a sub-folder using the name of the .exe application.
-    std::string programName = getProgramName();
-    grabber_state.screenshotsRootDirectory = grabber_state.screenshotsRootDirectory + programName + "/";
+    grabber_state.screenshotsRootDirectory = grabber_state.screenshotsRootDirectory + appName + "/";
     if (!std::filesystem::is_directory(grabber_state.screenshotsRootDirectory)) {
         std::filesystem::create_directory(grabber_state.screenshotsRootDirectory);
     }
@@ -538,6 +538,15 @@ static void onPresent(reshade::api::command_queue*, reshade::api::effect_runtime
     }
 }
 
+void writeSceneInfo(const std::string& sceneName, const std::string& sceneDirectory) {
+    std::string sceneInfoPath = sceneDirectory + sceneName + ".txt";
+    std::ofstream sceneInfoFile(sceneInfoPath.c_str());
+    sceneInfoFile << "appName = " << appName << "\n";
+    sceneInfoFile << "nearPlaneDist = " << nearPlaneDist << "\n";
+    sceneInfoFile << "farPlaneDist = " << farPlaneDist << "\n";
+    sceneInfoFile.close();
+}
+
 static void drawDebugMenu(effect_runtime *runtime, void *) {
     device* const device = runtime->get_device();
     grabber_context& grabber_state = device->get_user_data<grabber_context>(grabber_context::GUID);
@@ -565,9 +574,8 @@ static void drawDebugMenu(effect_runtime *runtime, void *) {
             grabber_state.record = true;
             grabber_state.onlyOneScreenshot = false;
 
-            grabber_state.screenshotsDirectory =
-                    grabber_state.screenshotsRootDirectory + "scene"
-                    + intToFixedLengthString(scene_idx, 4) + "/";
+            std::string sceneName = "scene" + intToFixedLengthString(scene_idx, 4);
+            grabber_state.screenshotsDirectory = grabber_state.screenshotsRootDirectory + sceneName + "/";
             grabber_state.screenshotsColorDirectory = grabber_state.screenshotsDirectory + "color/";
             grabber_state.screenshotsDepthDirectory = grabber_state.screenshotsDirectory + "depth/";
             grabber_state.screenshotsNormalDirectory = grabber_state.screenshotsDirectory + "normal/";
@@ -583,6 +591,7 @@ static void drawDebugMenu(effect_runtime *runtime, void *) {
             if (!std::filesystem::is_directory(grabber_state.screenshotsNormalDirectory)) {
                 std::filesystem::create_directory(grabber_state.screenshotsNormalDirectory);
             }
+            writeSceneInfo(sceneName, grabber_state.screenshotsDirectory);
         }
     } else {
         if (g_imgui_function_table.Button("Stop Recording", ImVec2(0, 0))) {
@@ -673,6 +682,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
         std::string programName = getProgramName();
         Logfile::get()->writeInfo(std::string() + "Application name: " + programName);
 
+        appName = getProgramName();
         loadConfig();
 
         reshade::register_overlay("reshade-grabber", drawDebugMenu);
