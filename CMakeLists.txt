@@ -15,6 +15,9 @@ set_target_properties(reshade_grabber PROPERTIES SUFFIX ".addon")
 target_link_libraries(reshade_grabber PRIVATE PNG::PNG)
 target_include_directories(reshade_grabber PRIVATE ${RESHADE_SOURCE_DIR} ${RESHADE_INCLUDE_DIR} ${IMGUI_INCLUDE_DIR})
 
+add_executable(convert_raw_image src/ConvertRawImage.cpp src/ImageRaw.hpp src/ImageRaw.cpp src/IO.hpp src/IO.cpp)
+target_link_libraries(convert_raw_image PNG::PNG)
+
 if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -23,5 +26,9 @@ endif()
 
 install(
         TARGETS reshade_grabber
+        RUNTIME DESTINATION addons
+)
+install(
+        TARGETS convert_raw_image
         RUNTIME DESTINATION addons
 )

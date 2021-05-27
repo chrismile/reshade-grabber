@@ -30,6 +30,7 @@
 #define SH_AUG_IO_HPP
 
 #include <string>
+#include <vector>
 
 /**
  * Saves the passed 'data' object as a width x height image with 8 bits per channel.

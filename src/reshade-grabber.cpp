@@ -49,6 +49,7 @@
 #include "Logfile.hpp"
 #include "TimeMeasurement.hpp"
 #include "IO.hpp"
+#include "ImageRaw.hpp"
 #include "vec3.hpp"
 
 using namespace reshade::api;
@@ -471,16 +472,21 @@ static void saveFrameData(reshade::api::effect_runtime* runtime, grabber_context
     TimeMeasurement saveImagesTime("save images");
     std::string filenameColor, filenameDepth, filenameNormal;
     std::string frameIdxStr = toString(frame_idx);
+#if defined(WRITE_PNG) && WRITE_PNG != 0
+    const std::string fileExtension = ".png";
+#else
+    const std::string fileExtension = ".raw";
+#endif
     if (grabber_state.onlyOneScreenshot) {
-        filenameColor = grabber_state.screenshotsDirectory + "color_" + frameIdxStr + ".png";
-        filenameDepth = grabber_state.screenshotsDirectory + "depth_" + frameIdxStr + ".png";
-        filenameNormal = grabber_state.screenshotsDirectory + "normal_" + frameIdxStr + ".png";
+        filenameColor = grabber_state.screenshotsDirectory + "color_" + frameIdxStr + fileExtension;
+        filenameDepth = grabber_state.screenshotsDirectory + "depth_" + frameIdxStr + fileExtension;
+        filenameNormal = grabber_state.screenshotsDirectory + "normal_" + frameIdxStr + fileExtension;
     } else {
-        filenameColor = grabber_state.screenshotsColorDirectory + frameIdxStr + ".png";
-        filenameDepth = grabber_state.screenshotsDepthDirectory + frameIdxStr + ".png";
-        filenameNormal = grabber_state.screenshotsNormalDirectory + frameIdxStr + ".png";
+        filenameColor = grabber_state.screenshotsColorDirectory + frameIdxStr + fileExtension;
+        filenameDepth = grabber_state.screenshotsDepthDirectory + frameIdxStr + fileExtension;
+        filenameNormal = grabber_state.screenshotsNormalDirectory + frameIdxStr + fileExtension;
     }
-    // Save the images to the disk in parallel (this can bring a huge speed-up due to the PNG encoding being slow).
+    // Save the images to the disk in parallel (this can bring a huge speed-up due to the PNG encoding step being slow).
     #pragma omp parallel sections num_threads(3)
     {
         #pragma omp section

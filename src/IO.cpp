@@ -29,6 +29,7 @@
 #include <vector>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -37,6 +38,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include "ImageRaw.hpp"
 #include "IO.hpp"
 
 inline bool stringEndsWith(const std::string& input, const std::string& test) {
@@ -126,20 +128,32 @@ void saveImage8Bit(
         //stbi_write_png(filename.c_str(), width, height, mat.cols(), colorImageUint.data(), width * mat.cols());
     } else if (stringEndsWith(filename, ".jpg")) {
         stbi_write_jpg(filename.c_str(), width, height, numChannels, data, 80);
+    } else if (stringEndsWith(filename, ".bmp")) {
+        stbi_write_bmp(filename.c_str(), width, height, numChannels, data);
+    } else if (stringEndsWith(filename, ".tga")) {
+        stbi_write_tga(filename.c_str(), width, height, numChannels, data);
+    } else if (stringEndsWith(filename, ".raw")) {
+        saveImageRaw(filename, width, height, numChannels, ChannelDataType::UINT8, data);
     } else {
-        throw std::runtime_error("saveColorImage: Unknown file ending.");
+        throw std::runtime_error("saveImage8Bit: Unsupported file ending.");
     }
 }
 
 void saveImage16Bit(
-        const std::string& filename, const uint32_t width, const uint32_t height,
-        uint16_t* data, int numChannels) {
-    savePngToFile(filename, width, height, numChannels, 16, false, data);
+        const std::string& filename, const uint32_t width, const uint32_t height, uint16_t* data, int numChannels) {
+    if (stringEndsWith(filename, ".png")) {
+        savePngToFile(filename, width, height, numChannels, 16, false, data);
+    } else if (stringEndsWith(filename, ".raw")) {
+        saveImageRaw(
+                filename, width, height, numChannels, ChannelDataType::UINT16,
+                reinterpret_cast<uint8_t*>(data));
+    } else {
+        throw std::runtime_error("saveImage16Bit: Unsupported file ending.");
+    }
 }
 
 void saveFloatImageNormalized(
-        const std::string& filename, const uint32_t width, const uint32_t height,
-        float* data, bool isDepth) {
+        const std::string& filename, const uint32_t width, const uint32_t height, float* data, bool isDepth) {
     float minVal = std::numeric_limits<float>::max();
     float maxVal = std::numeric_limits<float>::lowest();
     for (size_t y = 0; y < height; y++) {

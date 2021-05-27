@@ -39,6 +39,12 @@ calling CMake. Then, the following command can be used after compiling the progr
 cmake --build . --target install
 ```
 
+As saving compressed data like PNG images can be computationally intensive due to the encoding step, in the standard
+configuration the program will output raw binary data. For more information on the format, please see `src/ImageRaw.*`.
+In order to convert these .raw images to .png images, please use the tool `convert_raw_image` that is built together
+with the add-on. It works both on files and (recursively) on directories.
+In order to instead save .png images directly in the program, use the switch `-DWRITE_PNG=1` when calling CMake.
+
 
 ## How to Use
 
