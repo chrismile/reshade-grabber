@@ -41,8 +41,9 @@
 #include "ImageRaw.hpp"
 #include "IO.hpp"
 
-inline bool stringEndsWith(const std::string& input, const std::string& test) {
-    return input.size() >= test.size() && input.compare(input.size() - test.size(), test.size(), test) == 0;
+bool stringEndsWith(const std::string& input, const std::string& suffix) {
+    return input.size() >= suffix.size()
+            && input.compare(input.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
 void savePngToFile(

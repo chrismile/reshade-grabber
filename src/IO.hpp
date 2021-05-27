@@ -33,6 +33,14 @@
 #include <vector>
 
 /**
+ * Returns whether the input strings ends with the passed suffix.
+ * @param input The input string.
+ * @param suffix The suffix string.
+ * @return True if the input strings ends with the passed suffix, and false otherwise.
+ */
+bool stringEndsWith(const std::string& input, const std::string& suffix);
+
+/**
  * Saves the passed 'data' object as a width x height image with 8 bits per channel.
  * @param filename The file name of the image (.png and .jpg are supported).
  * @param width The width of the image.

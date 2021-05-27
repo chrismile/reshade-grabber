@@ -83,7 +83,7 @@ inline bool readBinary(void* data, size_t size, FILE* file) {
 
 bool loadImageRaw(
         const std::string& filename, uint32_t& width, uint32_t& height,
-        uint32_t& numChannels, ChannelDataType& channelDataType, uint8_t* byteData) {
+        uint32_t& numChannels, ChannelDataType& channelDataType, uint8_t*& byteData) {
     FILE* file = fopen(filename.c_str(), "rb");
     if (file == nullptr) {
         throw std::runtime_error("Error in loadImageRaw.");

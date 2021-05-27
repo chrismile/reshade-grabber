@@ -43,6 +43,6 @@ bool saveImageRaw(
 
 bool loadImageRaw(
         const std::string& filename, uint32_t& width, uint32_t& height,
-        uint32_t& numChannels, ChannelDataType& channelDataType, uint8_t* byteData);
+        uint32_t& numChannels, ChannelDataType& channelDataType, uint8_t*& byteData);
 
 #endif //CONVERT_RAW_IMAGE_IMAGERAW_HPP

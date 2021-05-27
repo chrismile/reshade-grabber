@@ -5,6 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c ${RESHADE_SOURCE_DIR}/dll_config.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ConvertRawImage.cpp)
 
 find_package(OpenMP REQUIRED)
 find_package(PNG REQUIRED)

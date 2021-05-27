@@ -38,11 +38,26 @@ void convertFromRaw(const std::filesystem::path& path) {
         std::cerr << "Error in convertFromRaw: Path \""<< path.generic_u8string() << "\" does not exist!" << std::endl;
         return;
     } else if (std::filesystem::is_directory(path)) {
+        bool childIsRawImage = false;
+        std::vector<std::filesystem::path> childPaths;
         std::filesystem::directory_iterator end;
         for (std::filesystem::directory_iterator i(path); i != end; ++i) {
-            convertFromRaw(i->path());
+            childPaths.push_back(i->path());
+            if (stringEndsWith(i->path().generic_u8string(), ".raw")) {
+                childIsRawImage = true;
+            }
         }
-    } else {
+        if (childIsRawImage) {
+            #pragma omp parallel for
+            for (int i = 0; i < int(childPaths.size()); i++) {
+                convertFromRaw(childPaths.at(i));
+            }
+        } else {
+            for (auto& childPath : childPaths) {
+                convertFromRaw(childPath);
+            }
+        }
+    } else if (stringEndsWith(path.generic_u8string(), ".raw")) {
         uint8_t* byteData = nullptr;
         uint32_t width = 0, height = 0, numChannels = 0;
         ChannelDataType channelDataType;
@@ -64,6 +79,9 @@ void convertFromRaw(const std::filesystem::path& path) {
             std::cerr << "Error in convertFromRaw: Can't load data from \""<< path.string() << "\"!" << std::endl;
         }
         delete[] byteData;
+
+        // Delete the raw image file after converting it.
+        std::filesystem::remove(path);
     }
 }
 
